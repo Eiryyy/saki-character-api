@@ -1,4 +1,4 @@
-var db    = require('orchestrate')(process.env.orchestrate_token);
+var db    = require('orchestrate')(process.env.ORCHESTRATE_TOKEN);
 
 exports.index = function(req, res){
 	res.render('index', { title: '咲-Saki-キャラクターデータベース検索API' });
