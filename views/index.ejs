@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title><%= title %></title>
+		<link rel='stylesheet' href='/stylesheets/bootstrap.min.css' />
+		<link rel='stylesheet' href='/stylesheets/style.css' />
+		<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+		<script type="text/javascript">
+			google.load("jquery", "1");
+			google.setOnLoadCallback(function () {
+				$(document).ready(function () {
+					var getQueryPart = function (id, query){
+						var part = '';
+						var value = $('#' + id).val();
+						if (value) {
+							part += query === '' ? '?' + id + '=' + value : '&' + id + '=' + value;
+						}
+						return part;
+					};
+
+					var positionFormat = function(position) {
+						switch (position) {
+							case 1:
+								return '先鋒';
+							case 2:
+								return '次鋒';
+							case 3:
+								return '中堅';
+							case 4:
+								return '副将';
+							case 5:
+								return '大将';
+							default:
+								return 'なし';
+						}
+					};
+
+					var getMonthDate = function(dateString) {
+						var date = new Date(dateString);
+						return date.getMonth() + 1 + '/' + date.getDate();
+					};
+
+					$('#submit').on('click', function () {
+						var query = '';
+						query += getQueryPart('bdf', query);
+						query += getQueryPart('bdt', query);
+						query += getQueryPart('hf', query);
+						query += getQueryPart('ht', query);
+						query += getQueryPart('g', query);
+						query += getQueryPart('po', query);
+						query += getQueryPart('pr', query);
+						query += getQueryPart('j', query);
+						$.ajax({
+							type: 'GET',
+							url: '/character' + query,
+							success: function (results) {
+								results = results || [];
+								$('#json').val(JSON.stringify(results));
+								$('#count').empty().append('総数: ' + results.length );
+								$('#resultBody').empty();
+								results.forEach(function (result) {
+									$('#resultBody').append('<tr><td>'
+										+ result.name + '</td><td>'
+										+ result.yomi + '</td><td>'
+										+ getMonthDate(result.birthday) + '</td><td>'
+										+ result.height + '</td><td>'
+										+ result.grade + '</td><td>'
+										+ positionFormat(result.position) + '</td><td>'
+										+ result.pref + '</td><td>'
+										+ result.job + '</td></tr>'
+									);
+								} );
+							}
+						});
+					});
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<h1><%= title %></h1>
+		<h2>何</h2>
+		<p>咲-Saki-キャラクターの情報を検索しJSONを返却するAPIです。</p>
+		<p>すべてのソースは <a href="http://sciasta.com/characters.html">http://sciasta.com/characters.html</a> より。</p>
+		<h2>仕様</h2>
+		<h3>リクエストURL</h3>
+		<p>http://sakiapi.herokuapp.com/character</p>
+		<h3>パラメータ</h3>
+		<ul>
+			<li>bdf: 誕生日の期間で絞り込む最初の日</li>
+			<li>bdt: 誕生日の期間で絞り込む最後の日</li>
+			<li>hf: 身長で絞り込む最低の高さ</li>
+			<li>ht: 身長で絞り込む最高の高さ</li>
+			<li>g: 学年(0は高校生以外)</li>
+			<li>po: ポジション(1→先鋒...5→大将) (0は団体戦出場なし)</li>
+			<li>pr: 地域(インターハイ地区準拠)</li>
+			<li>j: 学校・職(上記ソース準拠)</li>
+		</ul>
+		<h2>使ってみる</h2>
+		<div class="row">
+			<div id="form" class="col-md-4">
+				<div class="form-group">
+					<label>誕生日</label>
+					<div class="row">
+						<div class="col-md-6">
+							<input type="text" id="bdf" class="form-control">から
+						</div>
+						<div class="col-md-6">
+							<input type="text" id="bdt" class="form-control">まで
+						</div>
+					</div>
+					<p class="help-block">(例:1月1日→01-01)</p>
+				</div>
+				<div class="form-group">
+					<label>身長</label>
+					<div class="row">
+						<div class="col-md-6">
+							<input type="text" id="hf" class="form-control">cm から
+						</div>
+						<div class="col-md-6">
+							<input type="text" id="ht" class="form-control">cm まで
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="g">学年</label>
+					<select id="g" class="form-control">
+						<option value="">指定なし</option>
+						<option value="1">高校1年</option>
+						<option value="2">高校2年</option>
+						<option value="3">高校3年</option>
+						<option value="0">それ以外</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>ポジション</label>
+					<select id="po" class="form-control">
+						<option value="">指定なし</option>
+						<option value="1">先鋒</option>
+						<option value="2">次鋒</option>
+						<option value="3">中堅</option>
+						<option value="4">副将</option>
+						<option value="5">大将</option>
+						<option value="0">団体戦出場なし</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>地域</label>
+					<input type="text" id="pr" class="form-control">
+				</div>
+				<div class="form-group">
+					<label>学校・職業</label>
+					<input type="text" id="j" class="form-control">
+				</div>
+				<p>各テキストボックスにおいて、空欄は指定なしになります。</p>
+				<div class="form-group">
+					<button id="submit" type="button" class="btn btn-default">送信</button>
+				</div>
+				<textarea id="json" class="form-control" rows="6"></textarea>
+			</div>
+		</div>
+		<p id="count"></p>
+		<table id="result" class="table">
+			<thead>
+				<tr>
+					<td>名前</td>
+					<td>読み</td>
+					<td>誕生日</td>
+					<td>身長</td>
+					<td>学年</td>
+					<td>ポジション</td>
+					<td>地域</td>
+					<td>職業・学校</td>
+				</tr>
+			</thead>
+			<tbody id="resultBody">
+			</tbody>
+		</table>
+		<p>作者: <a href="http://twitter.com/Eiryyy">@Eiryyy</a></p>
+		<p>I RESPECT RITZ KOBAYASHI</p>
+	</body>
+</html>
